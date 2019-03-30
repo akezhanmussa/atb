@@ -1,24 +1,24 @@
-# -*- coding: utf-8 -*-
-
 import sys
 import telegram
 import logging
 import random
 import telegram.bot
 import datetime
+import os
 from telegram import KeyboardButton
 from telegram.ext import CommandHandler
 from telegram.ext import Updater, RegexHandler, ConversationHandler
 from telegram.ext import MessageHandler, Filters
-import numpy as np 
-# 	Сколько лет?
+import numpy as np
+from flask import Flask
+#Сколько лет?
 
-# Сознание какое?
+#Сознание какое?
 
-# Дыхание какое?
+#Дыхание какое?
 
 # Способность ходить
-# 
+#
 
 # Лежит?
 # {}
@@ -28,6 +28,8 @@ import numpy as np
 
 # Потеет?
 # {"Да":0, "Нет":0, "Не знаю":0.724}
+
+app = Flask(__name__)
 
 token_ayala = "725000187:AAG74_5qbFRXhOSpDynS9KX429_r09XneoU"
 bot_ayala = telegram.Bot(token=token_ayala)
@@ -42,15 +44,21 @@ is_blue = {"Есть":0.112, "Нет":0}
 is_sweat = {"Да":0, "Нет":0, "Не знаю":0.724}
 counter = 0
 speechafter = """
-Если данная цифра выше 3.6% - предлагаю вызвать скорую помощь.
-А если меньше- ты можешь решить ситуацию самостоятельно. Инструкции даны ниже.
-Когда информация ниже не помогла - лучше позвонить врачу по номерам ниже или вызвать скорую помощь
-Если у тебя: гипертония, простуда, отравление/боли в животе, головная или суставная боль, то возможно решение есть в этой (статье)
-Если нет нужных лекарств дома, то заказывай лекарства онлайн легко и по отличной цене здесь: @europharmabot
-Номера врачей для консультации:
+Если цифра выше 3.6% - рекомендуется вызвать скорую помощь.
+Если цифра меньше 3.6% - вы сможете решить ситуацию сами. Инструкции даны по ссылке ниже.
+
+В инструкции указаны следующее: гипертония, простуда, отравление/боли в животе, голвная/суставная боль.
+
+В случае отсутствия нужной информации в нашей инструкции - позвонить врачу. Номера даны ниже.
+
+Нет нужных лекарств? Закажи их здесь с доставкой на дом: @europharmabot
+
+**Номера врачей для консультации:**
 Астана: 1430
 Алматы: 8 (7273) 00 01 03
-Если тебе понравилась идея и ты хочешь её дальнейшее совершенствование уже с настоящим автоматизированным вызовом скорой помощи, поделись о нас в (Instagram), отметив нас: @ayala_space. Так мы поймем, что действительно нужны
+
+Если тебе нравится такой способ вызова скорой помощи- поделись с нами в __Instagram__, отметив нас @ayala_space. Так мы видим, что это нужно 
+
 https://teletype.in/@ayalaspace/SkMebjRlN
 """
 
@@ -85,7 +93,7 @@ def start(bot, update):
 	con_keyboard = KeyboardButton(text='Начать', request_contact=False)
 	custom_keyboard = [[con_keyboard]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
-	bot.send_message(chat_id=update.message.chat_id, text="Привет гость, зарегестрируйся пожалуйста, отправив нам свой номер, чтобы узнать критичность ситуации", reply_markup=reply_markup)
+	bot.send_message(chat_id=update.message.chat_id, text="Дай доступ к своему номеру для регистрации, нажав на <Отправить номер>", reply_markup=reply_markup)
 
 start_handler = CommandHandler('start', start)
 dispatcher.add_handler(start_handler)
@@ -98,10 +106,10 @@ q1, q2, q3, q4, q5, q6, q7, q8, q9, menu, CONV2 = range(11)
 
 def conversationStarter(bot, update):
 	print("HERE")
-	custom_keyboard = [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
+	custom_keyboard = [['Узнать критичность'], ['Как пользоваться?']]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	# [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
-	text = ['⚙️Настройка'.decode('utf-8'), 'Узнать критичность'.decode('utf-8'), 'Как пользоваться?'.decode('utf-8')]
+	text = ['⚙️Настройка', 'Узнать критичность', 'Как пользоваться?']
 	if update.message.text == text[0]:
 		bot.send_message(chat_id=update.message.chat_id, text="Ваши данные сохранены в базу, пройдите тест", reply_markup=reply_markup)
 		return CONV
@@ -118,7 +126,7 @@ def conversationStarter2(bot, update):
 	custom_keyboard = [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	# [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
-	text = ['⚙️Настройка'.decode('utf-8'), 'Узнать критичность'.decode('utf-8'), 'Как пользоваться?'.decode('utf-8')]
+	text = ['⚙️Настройка', 'Узнать критичность', 'Как пользоваться?']
 	if update.message.text == text[0]:
 		bot.send_message(chat_id=update.message.chat_id, text="Ваши данные сохранены в базу, пройдите тест", reply_markup=reply_markup)
 		return CONV2
@@ -133,9 +141,9 @@ def conversationStarter2(bot, update):
 #CONVERSATION FOR SETTINGS
 
 def number(bot, update):
-	text = 'Начать'.decode('utf-8')
-	text2 = '⚙️Настройка'.decode('utf-8')
-	text3 = 'Узнать критичность'.decode('utf-8')
+	text = 'Начать'
+	text2 = '⚙️Настройка'
+	text3 = 'Узнать критичность'
 	print('Was clicked')
 	if update.message.text == text or update.message.text == text2 or update.message.text == text3:
 		con_keyboard = KeyboardButton(text='Отправить номер', request_contact=True)
@@ -185,19 +193,19 @@ def manageBirth(bot, update):
 # is_sweat = {"Да":0, "Нет":0, "Не знаю":0.724}
 # counter = 0
 # speechafter = """
-q1a = ["Родственник".decode('utf-8')]
-q2a = ["0-1".decode('utf-8'), "1-14".decode('utf-8'), "15-39".decode('utf-8'), "40-69".decode('utf-8'), "70+".decode('utf-8'), "не знаю".decode('utf-8')]
-q3a = ["Ясное".decode('utf-8'), "Неясное".decode('utf-8'), "Без сознания".decode('utf-8'), "Не знаю".decode('utf-8')]
-q4a = ["Нормальное".decode('utf-8'), "Одышка".decode('utf-8'), "Задыхается".decode('utf-8'), "Не знаю".decode('utf-8')]
-q5a = ["Нормальное".decode('utf-8'), "С поддержкой".decode('utf-8'), "Не может".decode('utf-8'), "Не знаю".decode('utf-8')]
-q6a = ["Да".decode('utf-8'), "Нет".decode('utf-8')]
-q7a = ["Есть".decode('utf-8'), "Нет".decode('utf-8')]
-q8a = ["Да".decode('utf-8'), "Нет".decode('utf-8'), "Не знаю".decode('utf-8')]
-q9a = ["Да".decode('utf-8'), "Нет".decode('utf-8')]
+q1a = ["Родственник"]
+q2a = ["0-1", "1-14", "15-39", "40-69", "70+", "не знаю"]
+q3a = ["Ясное", "Неясное", "Без сознания", "Не знаю"]
+q4a = ["Нормальное", "Одышка", "Задыхается", "Не знаю"]
+q5a = ["Нормальное", "С поддержкой", "Не может", "Не знаю"]
+q6a = ["Да", "Нет"]
+q7a = ["Есть", "Нет"]
+q8a = ["Да", "Нет", "Не знаю"]
+q9a = ["Да", "Нет"]
 
 # TODO: finish if statements to validate answers
 # def question1(bot, update):
-# 	text = 'Вызывать скорую'.decode('utf-8')
+# 	text = 'Вызывать скорую'
 # 	if update.message.text == text:
 # 		custom_keyboard = [["Родственник"]]
 # 		reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
@@ -216,7 +224,7 @@ def question2(bot, update):
 
 def question3(bot, update):
 	global results
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [["Ясное", "Неясное"], ["Без сознания", "Не знаю"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Сознание?", reply_markup=reply_markup)
@@ -225,7 +233,7 @@ def question3(bot, update):
 
 def question4(bot, update):
 	global results
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [["Нормальное", "Одышка"], ["Задыхается", "Не знаю"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Дыхание?", reply_markup=reply_markup)
@@ -234,7 +242,7 @@ def question4(bot, update):
 
 def question5(bot, update):
 	global results
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [["Нормальное", "С поддержкой"], ["Не может", "Не знаю"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Способность ходить?", reply_markup=reply_markup)
@@ -243,7 +251,7 @@ def question5(bot, update):
 
 def question6(bot, update):
 	global results
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [["Да", "Нет"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Лежит?", reply_markup=reply_markup)
@@ -252,7 +260,7 @@ def question6(bot, update):
 
 def question7(bot, update):
 	global results
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [["Есть", "Нет"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Посинения?", reply_markup=reply_markup)
@@ -262,8 +270,8 @@ def question7(bot, update):
 def question8(bot, update):
 	global results, counter
 	global wasQuestion
-	results.append(update.message.text.encode('utf-8'))
-	print(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
+	print(update.message.text)
 	custom_keyboard = [["Да", "Нет"], ["Не знаю"]]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="Потеет?", reply_markup=reply_markup)
@@ -275,7 +283,7 @@ def question8(bot, update):
 # def question9(bot, update):
 # 	global results
 # 	global wasQuestion
-# 	results.append(update.message.text.encode('utf-8'))
+# 	results.append(update.message.text)
 # 	custom_keyboard = [["Да", "Нет"]]
 # 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 # 	bot.send_message(chat_id=update.message.chat_id, text="Паника?", reply_markup=reply_markup)
@@ -311,8 +319,8 @@ def manageAnswers(bot, update):
 	global results
 	global wasQuestion
 	if wasQuestion:
-		results.append(update.message.text.encode('utf-8'))
-		wasQuestion = False 
+		results.append(update.message.text)
+		wasQuestion = False
 	result = risk_estimation() * 100
 	print("The number of clicks {}".format(counter))
 	custom_keyboard = [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
@@ -323,7 +331,7 @@ def manageAnswers(bot, update):
 #CONVERSATION FOR SETTINGS
 
 def helpp(bot, update):
-	text = 'Как пользоваться?'.decode('utf-8')
+	text = 'Как пользоваться?'
 	if update.message.text == text:
 		custom_keyboard = [["Вызов скорой", "Настройка профиля"]]
 		reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
@@ -333,7 +341,7 @@ def helpp(bot, update):
 		return ConversationHandler.END
 
 def helpAnswer(bot, update):
-	text = 'Вызов скорой'.decode('utf-8')
+	text = 'Вызов скорой'
 	if update.message.text == text:
 		bot.send_message(chat_id=update.message.chat_id, text="Вызов скорой инструкция")
 		return MENU
@@ -345,7 +353,7 @@ def helpAnswer(bot, update):
 
 def menuu(bot, update):
 	print("HERE")
-	results.append(update.message.text.encode('utf-8'))
+	results.append(update.message.text)
 	custom_keyboard = [['Узнать критичность', '⚙️Настройка'], ['Как пользоваться?']]
 	reply_markup = telegram.ReplyKeyboardMarkup(custom_keyboard)
 	bot.send_message(chat_id=update.message.chat_id, text="МЕНЮ", reply_markup=reply_markup)
@@ -409,10 +417,11 @@ def main():
 
 	u.start_polling()
 
+@app.route('/')
+def root():
+	return 'hii'
+
 if __name__ == '__main__':
-    main()
-
-
-
-
-
+	main()
+	port = int(os.environ.get('PORT', 5020))
+	app.run(host='0.0.0.0', port = port, debug=True, use_reloader=False)
